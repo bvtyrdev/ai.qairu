@@ -1,0 +1,73 @@
+import heapq
+
+grid = [
+    [0, 0, 0, 1, 0, 0],
+    [0, 1, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0, 1],
+    [0, 1, 1, 1, 0, 0],
+    [0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0]
+]
+
+start = (0, 0)
+goal = (5, 5)
+
+def get_neighbors(pos, grid_matrix):
+    r, c = pos
+    neighbors = []
+    for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < 6 and 0 <= nc < 6 and grid_matrix[nr][nc] == 0:
+            neighbors.append((nr, nc))
+    return neighbors
+
+def bfs(grid_matrix, start, goal):
+    queue = [(start, [start])]
+    visited = {start}
+    expanded_nodes = 0
+
+    while queue:
+        curr, path = queue.pop(0)
+        expanded_nodes += 1
+
+        if curr == goal:
+            return path, len(path) - 1, expanded_nodes
+
+        for nxt in get_neighbors(curr, grid_matrix):
+            if nxt not in visited:
+                visited.add(nxt)
+                queue.append((nxt, path + [nxt]))
+    return None, float('inf'), expanded_nodes
+
+def manhattan(p1, p2):
+    return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
+
+def a_star(grid_matrix, start, goal):
+    pq = [(manhattan(start, goal), 0, start, [start])]
+    visited = {}
+    expanded_nodes = 0
+
+    while pq:
+        f, g, curr, path = heapq.heappop(pq)
+
+        if curr in visited and visited[curr] <= g:
+            continue
+        visited[curr] = g
+        expanded_nodes += 1
+
+        if curr == goal:
+            return path, g, expanded_nodes
+
+        for nxt in get_neighbors(curr, grid_matrix):
+            new_g = g + 1
+            if nxt not in visited or new_g < visited[nxt]:
+                h = manhattan(nxt, goal)
+                heapq.heappush(pq, (new_g + h, new_g, nxt, path + [nxt]))
+
+    return None, float('inf'), expanded_nodes
+
+bfs_path, bfs_cost, bfs_exp = bfs(grid, start, goal)
+astar_path, astar_cost, astar_exp = a_star(grid, start, goal)
+
+print(f"BFS: Жол={bfs_path}, Құны={bfs_cost}, Кеңейтілген түйіндер={bfs_exp}")
+print(f"A*:  Жол={astar_path}, Құны={astar_cost}, Кеңейтілген түйіндер={astar_exp}")
