@@ -1,0 +1,47 @@
+import numpy as np
+
+# 1. Байес формуласы
+def bayes_update(prior_h, p_e_given_h, p_e_given_s):
+    prior_s = 1.0 - prior_h
+    p_e = p_e_given_h * prior_h + p_e_given_s * prior_s
+    post_h = (p_e_given_h * prior_h) / p_e
+    return post_h, p_e
+
+# 2. Сезімталдық талдауы (ALARM бақылауы үшін)
+p_alarm_h = 0.90
+p_alarm_s = 0.10
+priors = [0.05, 0.20, 0.50, 0.80]
+
+print("--- Сезімталдық талдауы ---")
+for p_init in priors:
+    p_post, _ = bayes_update(p_init, p_alarm_h, p_alarm_s)
+    print(f"Бастапқы P(H) = {p_init:.2f} -> Жаңартылған P(H|ALARM) = {p_post:.4f}")
+
+# 3. HMM Сүзгісі
+observations = ['ALARM', 'NORMAL', 'ALARM', 'ALARM']
+trans_matrix = np.array([
+    [0.80, 0.20],  # H_t-1 -> [H_t, S_t]
+    [0.10, 0.90]   # S_t-1 -> [H_t, S_t]
+])
+
+emission = {
+    'ALARM': np.array([0.90, 0.10]),   # P(ALARM|H), P(ALARM|S)
+    'NORMAL': np.array([0.10, 0.90])  # P(NORMAL|H), P(NORMAL|S)
+}
+
+state = np.array([0.20, 0.80]) # [P(H), P(S)]
+
+print("\n--- HMM Сүзгілеу қадамдары ---")
+for t, obs in enumerate(observations, start=1):
+    # Болжау қадамы (Prediction)
+    pred_state = np.dot(state, trans_matrix)
+    
+    # Жаңарту қадамы (Update)
+    likelihood = emission[obs]
+    unnorm = pred_state * likelihood
+    Z = np.sum(unnorm)
+    state = unnorm / Z
+    
+    print(f"t{t} ({obs}):")
+    print(f"  Болжанған: P(H)={pred_state[0]:.4f}, P(S)={pred_state[1]:.4f}")
+    print(f"  Жаңартылған: P(H)={state[0]:.4f}, P(S)={state[1]:.4f}")
