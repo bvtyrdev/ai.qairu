@@ -1,0 +1,44 @@
+states = ["A", "B", "C"]
+T = [[0.7, 0.3, 0.0], [0.2, 0.6, 0.2], [0.0, 0.3, 0.7]]
+readings = ["RED", "BLUE", "BLUE", "RED"]
+
+
+def predict(b, T):
+  return [sum(b[i] * T[i][j] for i in range(3)) for j in range(3)]
+
+
+def update(pred, likelihood):
+  weights = [pred[i] * likelihood[i] for i in range(3)]
+  total = sum(weights)
+  return [w / total for w in weights]
+
+
+def run_hmm(belief_init, emission_matrix, title):
+  print(f"\n=== {title} ===")
+  print("t  Signal  P(A)    P(B)    P(C)    Most Likely Zone")
+  print("-" * 55)
+
+  belief = list(belief_init)
+  for t, reading in enumerate(readings, start=1):
+    pred = predict(belief, T)
+    belief = update(pred, emission_matrix[reading])
+    most_likely = states[belief.index(max(belief))]
+    print(
+        f"{t}  {reading:<6}  {belief[0]:.4f}  {belief[1]:.4f}  {belief[2]:.4f}  "
+        f"Zone {most_likely}"
+    )
+
+
+emission_base = {"RED": [0.8, 0.5, 0.2], "BLUE": [0.2, 0.5, 0.8]}
+belief_base = [0.5, 0.3, 0.2]
+run_hmm(belief_base, emission_base, "Base Model (b0 = [0.5, 0.3, 0.2])")
+
+belief_exp_a = [0.2, 0.2, 0.6]
+run_hmm(belief_exp_a, emission_base, "Experiment A: b0 = [0.2, 0.2, 0.6]")
+
+emission_exp_b = {"RED": [0.6, 0.5, 0.4], "BLUE": [0.4, 0.5, 0.6]}
+run_hmm(
+    belief_base,
+    emission_exp_b,
+    "Experiment B: Weak Sensor (RED = [0.6, 0.5, 0.4])",
+)
